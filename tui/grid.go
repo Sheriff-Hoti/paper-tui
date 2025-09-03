@@ -14,8 +14,10 @@ const (
 )
 
 type grid struct {
-	keys  *gridKeyMap
-	cells [][]cell
+	keys          *gridKeyMap
+	cells         [][]cell
+	window_width  uint32
+	window_height uint32
 }
 
 func NewGrid(abs_files []string, selected_file string, init_term_width int, init_term_height int) *grid {
@@ -35,6 +37,8 @@ func NewGrid(abs_files []string, selected_file string, init_term_width int, init
 				id:       uint32(idx),
 				RowCell:  uint32(idx / COLS),
 				ColCell:  uint32(idx % COLS),
+				Width:    uint32((init_term_width / COLS) - 2),
+				Height:   uint32((init_term_height / ROWS) - 2),
 			})
 		}
 
@@ -46,7 +50,7 @@ func NewGrid(abs_files []string, selected_file string, init_term_width int, init
 	for idx, cell_page := range cells {
 		s += fmt.Sprint("page:", idx, "\n")
 		for _, cell := range cell_page {
-			s += fmt.Sprint(cell.id, ":", cell.filename, ":  :col:", cell.ColCell, " ", "row:", cell.RowCell, "\n")
+			s += fmt.Sprint(cell.id, ":", cell.filename, ":  :col:", cell.ColCell, " ", "row:", cell.RowCell, " widht:", cell.Width, " height:", cell.Height, "\n")
 		}
 		s += "\n"
 	}
@@ -56,7 +60,9 @@ func NewGrid(abs_files []string, selected_file string, init_term_width int, init
 	return &grid{
 		keys: gridKeyMaps(),
 		// Our to-do list is a grocery list
-		cells: cells,
+		cells:         cells,
+		window_width:  uint32(init_term_width),
+		window_height: uint32(init_term_height),
 		// A map which indicates which choices are selected. We're using
 		// the  map like a mathematical set. The keys refer to the indexes
 		// of the `choices` slice, above.

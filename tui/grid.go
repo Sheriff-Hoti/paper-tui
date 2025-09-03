@@ -12,7 +12,7 @@ type model struct {
 	selected map[int]struct{} // which to-do items are selected
 }
 
-func InitialModel() model {
+func NewGrid(absfiles []string, selected_file string, init_term_width int, init_term_height int) model {
 	return model{
 		// Our to-do list is a grocery list
 		choices: []string{"Buy carrots", "Buy celery", "Buy kohlrabi"},

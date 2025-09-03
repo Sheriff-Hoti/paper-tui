@@ -3,8 +3,12 @@ package tui
 import "github.com/charmbracelet/bubbles/key"
 
 type gridKeyMap struct {
-	quit key.Binding
-	hide key.Binding
+	quit  key.Binding
+	hide  key.Binding
+	left  key.Binding
+	right key.Binding
+	up    key.Binding
+	down  key.Binding
 }
 
 func gridKeyMaps() *gridKeyMap {
@@ -16,6 +20,22 @@ func gridKeyMaps() *gridKeyMap {
 		hide: key.NewBinding(
 			key.WithKeys("h"),
 			key.WithHelp("h", "hide"),
+		),
+		left: key.NewBinding(
+			key.WithKeys("left"),
+			key.WithHelp("<-", "left"),
+		),
+		right: key.NewBinding(
+			key.WithKeys("right"),
+			key.WithHelp("->", "right"),
+		),
+		up: key.NewBinding(
+			key.WithKeys("up"),
+			key.WithHelp("^", "up"),
+		),
+		down: key.NewBinding(
+			key.WithKeys("down"),
+			key.WithHelp("d", "down"),
 		),
 	}
 }

@@ -3,3 +3,6 @@ build:
 
 dev:
 	go run . --config ./test/assets/config.json
+
+tidy:
+	go mod tidy

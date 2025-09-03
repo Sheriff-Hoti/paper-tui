@@ -33,6 +33,8 @@ func NewGrid(abs_files []string, selected_file string, init_term_width int, init
 			cell_page = append(cell_page, cell{
 				filename: file,
 				id:       uint32(idx),
+				RowCell:  uint32(idx / COLS),
+				ColCell:  uint32(idx % COLS),
 			})
 		}
 
@@ -40,16 +42,16 @@ func NewGrid(abs_files []string, selected_file string, init_term_width int, init
 	}
 
 	//debbuginn
-	// s := ""
-	// for idx, cell_page := range cells {
-	// 	s += fmt.Sprint("page:", idx, "\n")
-	// 	for _, cell := range cell_page {
-	// 		s += fmt.Sprint(cell.id, ":", cell.filename, "\n")
-	// 	}
-	// 	s += "\n"
-	// }
+	s := ""
+	for idx, cell_page := range cells {
+		s += fmt.Sprint("page:", idx, "\n")
+		for _, cell := range cell_page {
+			s += fmt.Sprint(cell.id, ":", cell.filename, ":  :col:", cell.ColCell, " ", "row:", cell.RowCell, "\n")
+		}
+		s += "\n"
+	}
 
-	// fmt.Print(s)
+	fmt.Print(s)
 
 	return &grid{
 		keys: gridKeyMaps(),

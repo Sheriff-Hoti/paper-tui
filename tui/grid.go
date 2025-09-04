@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/Sheriff-Hoti/paper-tui/backend"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/paginator"
 	tea "github.com/charmbracelet/bubbletea"
@@ -16,7 +17,7 @@ const (
 	ROWS         = 3
 	PAGE_SIZE    = COLS * ROWS
 	ROWS_SPACING = 1
-	COLS_SPACING = 1
+	COLS_SPACING = 2
 	TOP_SPACING  = 1
 	LEFT_SPACING = 1
 )
@@ -29,12 +30,12 @@ type grid struct {
 	window_width  uint32
 	window_height uint32
 	paginator     paginator.Model
+	backend       backend.WallpaperBackend
 }
 
 func NewGrid(abs_files []string, selected_file string, init_term_width int, init_term_height int) *grid {
 
-	// chunked := make([][]string, 0, (len(abs_files)+PAGE_SIZE-1)/PAGE_SIZE)
-
+	backen := backend.InitBackend()
 	cells := make([][]*cell, 0, (len(abs_files)+PAGE_SIZE-1)/PAGE_SIZE)
 
 	p := paginator.New()
@@ -42,7 +43,6 @@ func NewGrid(abs_files []string, selected_file string, init_term_width int, init
 	// p.PerPage = 10
 	p.ActiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "235", Dark: "252"}).Render("•")
 	p.InactiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "250", Dark: "238"}).Render("•")
-	p.SetTotalPages(10)
 
 	idCounter := 1
 
@@ -76,6 +76,8 @@ func NewGrid(abs_files []string, selected_file string, init_term_width int, init
 		cells = append(cells, cell_page)
 	}
 
+	p.SetTotalPages(len(cells))
+
 	//debbuginn
 	// s := ""
 	// for idx, cell_page := range cells {
@@ -94,6 +96,7 @@ func NewGrid(abs_files []string, selected_file string, init_term_width int, init
 		window_width:  uint32(init_term_width),
 		window_height: uint32(init_term_height),
 		paginator:     p,
+		backend:       backen,
 		// A map which indicates which choices are selected. We're using
 		// the  map like a mathematical set. The keys refer to the indexes
 		// of the `choices` slice, above.
@@ -187,6 +190,10 @@ func (g *grid) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, g.keys.down):
 			g.go_down()
 			return g, nil
+
+		case key.Matches(msg, g.keys.select_cell):
+			g.backend.SetImage(g.cells[g.page_index][g.cell_index].filename)
+			return g, nil
 		}
 	}
 
@@ -207,7 +214,7 @@ func (g *grid) View() string {
 		Width(int(cell.img_width)).
 		Height(int(cell.img_height)).
 		// Background(lipgloss.Color("12")).        // blue square
-		MarginTop(int(cell.row_cell-1)). // y position
+		MarginTop(int(cell.row_cell)). // y position
 		MarginLeft(int(cell.col_cell-1)).
 		Border(lipgloss.RoundedBorder(), true).
 		Render(s)
@@ -215,11 +222,10 @@ func (g *grid) View() string {
 	background := lipgloss.NewStyle().
 		Width(int(g.window_width)).
 		Height(int(g.window_height)).
-		Background(lipgloss.Color("235"))
+		Background(lipgloss.Color("235")).Render(square)
 
-	// view := lipgloss.JoinVertical(lipgloss.Center, background, g.paginator.View())
-	return background.Render(square)
-
+	g.paginator.Page = g.page_index
+	return lipgloss.JoinVertical(lipgloss.Center, background, g.paginator.View())
 }
 
 func (g *grid) go_up() {

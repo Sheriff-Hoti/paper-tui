@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/charmbracelet/bubbles/key"
@@ -42,6 +43,9 @@ func NewGrid(abs_files []string, selected_file string, init_term_width int, init
 	p.ActiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "235", Dark: "252"}).Render("•")
 	p.InactiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "250", Dark: "238"}).Render("•")
 	p.SetTotalPages(10)
+
+	idCounter := 1
+
 	for i := 0; i < len(abs_files); i += PAGE_SIZE {
 		end := min(i+PAGE_SIZE, len(abs_files))
 		// chunked = append(chunked, abs_files[i:end])
@@ -56,7 +60,7 @@ func NewGrid(abs_files []string, selected_file string, init_term_width int, init
 
 			cell_page = append(cell_page, cell{
 				filename:   file,
-				id:         uint32(idx),
+				id:         uint32(idCounter),
 				row_idx:    row_idx,
 				col_idx:    col_idx,
 				row_cell:   (row_idx * img_height) + TOP_SPACING + (ROWS_SPACING * row_idx),
@@ -64,6 +68,9 @@ func NewGrid(abs_files []string, selected_file string, init_term_width int, init
 				img_width:  img_width,
 				img_height: img_height,
 			})
+
+			idCounter++
+
 		}
 
 		cells = append(cells, cell_page)
@@ -95,12 +102,61 @@ func NewGrid(abs_files []string, selected_file string, init_term_width int, init
 
 func (g *grid) Init() tea.Cmd {
 	// Just return `nil`, which means "no I/O right now, please."
+	first_page := g.cells[0]
+	for _, cell := range first_page {
+		fmt.Fprintf(os.Stdout, "\x1b[%d;%dH", cell.row_cell+1, cell.col_cell+1)
+		cell.RenderImage(os.Stdout, KittyImgOpts{
+			DstCols: uint32(cell.img_width),
+			DstRows: uint32(cell.img_height),
+			// 100 pixels =1 row
+			// SrcX:      109,
+			// SrcY:      109,
+			// Cursor: 1,
+			// SrcWidth:  uint32(800),
+			// SrcHeight: uint32(500),
+			//TODO: fix it
+			ImageId:     cell.id,
+			PlacementId: cell.id,
+		})
+	}
 	return nil
 }
 
 func (g *grid) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case page_change_msg:
+		for _, cell := range msg.old_cells {
+			cell.Hide(os.Stdout, KittyImgOpts{
+				ImageId:     cell.id,
+				PlacementId: cell.id,
+			})
+		}
+		for _, cell := range msg.cells {
 
+			img_opts := KittyImgOpts{
+				DstCols: uint32(cell.img_width),
+				DstRows: uint32(cell.img_height),
+				// 100 pixels =1 row
+				// SrcX:      109,
+				// SrcY:      109,
+				// Cursor: 1,
+				// SrcWidth:  uint32(800),
+				// SrcHeight: uint32(500),
+				//TODO: fix it
+				ImageId:     cell.id,
+				PlacementId: cell.id,
+			}
+
+			fmt.Fprintf(os.Stdout, "\x1b[%d;%dH", cell.row_cell+1, cell.col_cell+1)
+
+			if cell.initialized {
+				cell.Show(os.Stdout, img_opts)
+			} else {
+				cell.RenderImage(os.Stdout, img_opts)
+			}
+
+		}
+		return g, nil
 	// Is it a key press?
 	case tea.KeyMsg:
 
@@ -112,11 +168,11 @@ func (g *grid) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return g, tea.Quit
 
 		case key.Matches(msg, g.keys.left):
-			g.go_left()
-			return g, nil
+			cmd := g.go_left()
+			return g, cmd
 		case key.Matches(msg, g.keys.right):
-			g.go_right()
-			return g, nil
+			cmd := g.go_right()
+			return g, cmd
 		case key.Matches(msg, g.keys.up):
 			g.go_up()
 			return g, nil
@@ -141,8 +197,8 @@ func (g *grid) View() string {
 		Width(int(cell.img_width)).
 		Height(int(cell.img_height)).
 		// Background(lipgloss.Color("12")).        // blue square
-		MarginTop(int(cell.row_cell)). // y position
-		MarginLeft(int(cell.col_cell)).
+		MarginTop(int(cell.row_cell-1)). // y position
+		MarginLeft(int(cell.col_cell-1)).
 		Border(lipgloss.RoundedBorder(), true).
 		Render(file)
 
@@ -212,21 +268,21 @@ func (g *grid) go_down() {
 
 }
 
-func (g *grid) go_left() {
+func (g *grid) go_left() tea.Cmd {
 	// guardrails
 	if len(g.cells) == 0 {
-		return
+		return nil
 	}
 	if g.page_index < 0 || g.page_index >= len(g.cells) {
-		return
+		return nil
 	}
 
 	page := g.cells[g.page_index]
 	if len(page) == 0 {
-		return
+		return nil
 	}
 	if g.cell_index < 0 || g.cell_index >= len(page) {
-		return
+		return nil
 	}
 
 	// get current cell's column/row
@@ -242,7 +298,7 @@ func (g *grid) go_left() {
 		}
 		prevPage := g.cells[prev]
 		if len(prevPage) == 0 {
-			return
+			return nil
 		}
 		// target = same row, last column
 		target := row*COLS + (COLS - 1)
@@ -252,28 +308,30 @@ func (g *grid) go_left() {
 		}
 		g.page_index = prev
 		g.cell_index = target
-		return
+		return change_page_cmd(page, prevPage)
+
 	}
 
 	// normal left move
 	g.cell_index--
+	return nil
 }
 
-func (g *grid) go_right() {
+func (g *grid) go_right() tea.Cmd {
 	// guardrails
 	if len(g.cells) == 0 {
-		return
+		return nil
 	}
 	if g.page_index < 0 || g.page_index >= len(g.cells) {
-		return
+		return nil
 	}
 
 	page := g.cells[g.page_index]
 	if len(page) == 0 {
-		return
+		return nil
 	}
 	if g.cell_index < 0 || g.cell_index >= len(page) {
-		return
+		return nil
 	}
 
 	// get current cell's column/row
@@ -289,7 +347,7 @@ func (g *grid) go_right() {
 		}
 		nextPage := g.cells[next]
 		if len(nextPage) == 0 {
-			return
+			return nil
 		}
 		// target = same row, first column
 		target := row * COLS
@@ -299,7 +357,8 @@ func (g *grid) go_right() {
 		}
 		g.page_index = next
 		g.cell_index = target
-		return
+		return change_page_cmd(page, nextPage)
+
 	}
 
 	// normal right move; if this would overflow the page (partial last page), wrap to next page
@@ -310,12 +369,13 @@ func (g *grid) go_right() {
 		}
 		nextPage := g.cells[next]
 		if len(nextPage) == 0 {
-			return
+			return nil
 		}
 		g.page_index = next
 		g.cell_index = 0
-		return
+		return change_page_cmd(page, nextPage)
 	}
 
 	g.cell_index++
+	return nil
 }

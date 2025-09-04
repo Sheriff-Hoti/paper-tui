@@ -33,7 +33,7 @@ type grid struct {
 	backend       backend.WallpaperBackend
 }
 
-func NewGrid(abs_files []string, selected_file string, init_term_width int, init_term_height int) *grid {
+func NewGrid(abs_files []string, selected_file string, init_term_width int, init_term_height int, back backend.WallpaperBackend) *grid {
 
 	backen := backend.InitBackend()
 	cells := make([][]*cell, 0, (len(abs_files)+PAGE_SIZE-1)/PAGE_SIZE)

@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/Sheriff-Hoti/paper-tui/backend"
 	"github.com/Sheriff-Hoti/paper-tui/config"
 	"github.com/Sheriff-Hoti/paper-tui/data"
 	"github.com/Sheriff-Hoti/paper-tui/tui"
@@ -35,10 +36,14 @@ func main() {
 		log.Fatal(err)
 	}
 
+	back := backend.InitBackend()
+
 	//check init here
 	if init {
 		log.Print(init)
 		//and check if data is already initialized
+		back.SetImage(data.Current_wallpaper)
+		return
 	}
 
 	files, err := config.GetWallpapers(config_struct.Wallpaper_dir)
@@ -53,7 +58,7 @@ func main() {
 	}
 
 	p := tea.NewProgram(
-		tui.NewGrid(files, data.Current_wallpaper, width, height), tea.WithAltScreen())
+		tui.NewGrid(files, data.Current_wallpaper, width, height, back), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)

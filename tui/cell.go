@@ -96,7 +96,6 @@ func (c *cell) RenderImage(out io.Writer, opts KittyImgOpts) error {
 	if _, err := fmt.Fprint(out, KITTY_IMG_FTR); err != nil {
 		return err
 	}
-	c.initialized = true
 	return nil
 }
 

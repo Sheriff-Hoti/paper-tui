@@ -23,7 +23,7 @@ const (
 
 type grid struct {
 	keys          *gridKeyMap
-	cells         [][]cell
+	cells         [][]*cell
 	page_index    int
 	cell_index    int
 	window_width  uint32
@@ -35,7 +35,7 @@ func NewGrid(abs_files []string, selected_file string, init_term_width int, init
 
 	// chunked := make([][]string, 0, (len(abs_files)+PAGE_SIZE-1)/PAGE_SIZE)
 
-	cells := make([][]cell, 0, (len(abs_files)+PAGE_SIZE-1)/PAGE_SIZE)
+	cells := make([][]*cell, 0, (len(abs_files)+PAGE_SIZE-1)/PAGE_SIZE)
 
 	p := paginator.New()
 	p.Type = paginator.Dots
@@ -49,7 +49,7 @@ func NewGrid(abs_files []string, selected_file string, init_term_width int, init
 	for i := 0; i < len(abs_files); i += PAGE_SIZE {
 		end := min(i+PAGE_SIZE, len(abs_files))
 		// chunked = append(chunked, abs_files[i:end])
-		cell_page := make([]cell, 0, PAGE_SIZE)
+		cell_page := make([]*cell, 0, PAGE_SIZE)
 
 		for idx, file := range abs_files[i:end] {
 
@@ -58,7 +58,7 @@ func NewGrid(abs_files []string, selected_file string, init_term_width int, init
 			img_width := uint32((init_term_width / COLS) - 2)
 			img_height := uint32((init_term_height / ROWS) - 2)
 
-			cell_page = append(cell_page, cell{
+			cell_page = append(cell_page, &cell{
 				filename:   file,
 				id:         uint32(idCounter),
 				row_idx:    row_idx,
@@ -77,16 +77,16 @@ func NewGrid(abs_files []string, selected_file string, init_term_width int, init
 	}
 
 	//debbuginn
-	s := ""
-	for idx, cell_page := range cells {
-		s += fmt.Sprint("page:", idx, "\n")
-		for _, cell := range cell_page {
-			s += fmt.Sprint(cell.id, ":", cell.filename, ":  :col:", cell.col_idx, " ", "row:", cell.row_idx, " widht:", cell.img_width, " height:", cell.img_height, "\n")
-		}
-		s += "\n"
-	}
+	// s := ""
+	// for idx, cell_page := range cells {
+	// 	s += fmt.Sprint("page:", idx, "\n")
+	// 	for _, cell := range cell_page {
+	// 		s += fmt.Sprint(cell.id, ":", cell.filename, ":  :col:", cell.col_idx, " ", "row:", cell.row_idx, " widht:", cell.img_width, " height:", cell.img_height, "\n")
+	// 	}
+	// 	s += "\n"
+	// }
 
-	fmt.Print(s)
+	// fmt.Print(s)
 
 	return &grid{
 		keys:          gridKeyMaps(),
@@ -118,11 +118,14 @@ func (g *grid) Init() tea.Cmd {
 			ImageId:     cell.id,
 			PlacementId: cell.id,
 		})
+		cell.initialized = true
 	}
 	return nil
 }
 
 func (g *grid) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+
+	// var cmd []tea.Cmd
 	switch msg := msg.(type) {
 	case page_change_msg:
 		for _, cell := range msg.old_cells {
@@ -148,15 +151,20 @@ func (g *grid) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 			fmt.Fprintf(os.Stdout, "\x1b[%d;%dH", cell.row_cell+1, cell.col_cell+1)
+			cell.RenderImage(os.Stdout, img_opts)
 
-			if cell.initialized {
-				cell.Show(os.Stdout, img_opts)
-			} else {
-				cell.RenderImage(os.Stdout, img_opts)
-			}
+			//show-render strategy doesnt work very well because kittys storage quotas,
+			//  if the quota is reached then the show func wont show images because they hae been cleared
+			// if cell.initialized {
+			// 	cell.Show(os.Stdout, img_opts)
+			// } else {
+
+			cell.initialized = true
+			// }
 
 		}
-		return g, nil
+
+	// 	return g, nil
 	// Is it a key press?
 	case tea.KeyMsg:
 
@@ -193,6 +201,8 @@ func (g *grid) View() string {
 	cell := page[g.cell_index]
 
 	file := filepath.Base(cell.filename)
+
+	s := fmt.Sprintf("%s %d %t", file, cell.id, cell.initialized)
 	square := lipgloss.NewStyle().
 		Width(int(cell.img_width)).
 		Height(int(cell.img_height)).
@@ -200,7 +210,7 @@ func (g *grid) View() string {
 		MarginTop(int(cell.row_cell-1)). // y position
 		MarginLeft(int(cell.col_cell-1)).
 		Border(lipgloss.RoundedBorder(), true).
-		Render(file)
+		Render(s)
 
 	background := lipgloss.NewStyle().
 		Width(int(g.window_width)).

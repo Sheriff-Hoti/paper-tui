@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/Sheriff-Hoti/paper-tui/backend"
+	"github.com/Sheriff-Hoti/paper-tui/config"
+	"github.com/Sheriff-Hoti/paper-tui/data"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/paginator"
 	tea "github.com/charmbracelet/bubbletea"
@@ -31,9 +33,11 @@ type grid struct {
 	window_height uint32
 	paginator     paginator.Model
 	backend       backend.WallpaperBackend
+	config        *config.Config
+	data          *data.Data
 }
 
-func NewGrid(abs_files []string, selected_file string, init_term_width int, init_term_height int, back backend.WallpaperBackend) *grid {
+func NewGrid(abs_files []string, config *config.Config, data *data.Data, init_term_width int, init_term_height int, back backend.WallpaperBackend) *grid {
 
 	backen := backend.InitBackend()
 	cells := make([][]*cell, 0, (len(abs_files)+PAGE_SIZE-1)/PAGE_SIZE)
@@ -48,7 +52,6 @@ func NewGrid(abs_files []string, selected_file string, init_term_width int, init
 
 	for i := 0; i < len(abs_files); i += PAGE_SIZE {
 		end := min(i+PAGE_SIZE, len(abs_files))
-		// chunked = append(chunked, abs_files[i:end])
 		cell_page := make([]*cell, 0, PAGE_SIZE)
 
 		for idx, file := range abs_files[i:end] {
@@ -78,18 +81,6 @@ func NewGrid(abs_files []string, selected_file string, init_term_width int, init
 
 	p.SetTotalPages(len(cells))
 
-	//debbuginn
-	// s := ""
-	// for idx, cell_page := range cells {
-	// 	s += fmt.Sprint("page:", idx, "\n")
-	// 	for _, cell := range cell_page {
-	// 		s += fmt.Sprint(cell.id, ":", cell.filename, ":  :col:", cell.col_idx, " ", "row:", cell.row_idx, " widht:", cell.img_width, " height:", cell.img_height, "\n")
-	// 	}
-	// 	s += "\n"
-	// }
-
-	// fmt.Print(s)
-
 	return &grid{
 		keys:          gridKeyMaps(),
 		cells:         cells,
@@ -97,9 +88,8 @@ func NewGrid(abs_files []string, selected_file string, init_term_width int, init
 		window_height: uint32(init_term_height),
 		paginator:     p,
 		backend:       backen,
-		// A map which indicates which choices are selected. We're using
-		// the  map like a mathematical set. The keys refer to the indexes
-		// of the `choices` slice, above.
+		data:          data,
+		config:        config,
 	}
 }
 
@@ -109,15 +99,8 @@ func (g *grid) Init() tea.Cmd {
 	for _, cell := range first_page {
 		fmt.Fprintf(os.Stdout, "\x1b[%d;%dH", cell.row_cell+1, cell.col_cell+1)
 		cell.RenderImage(os.Stdout, KittyImgOpts{
-			DstCols: uint32(cell.img_width),
-			DstRows: uint32(cell.img_height),
-			// 100 pixels =1 row
-			// SrcX:      109,
-			// SrcY:      109,
-			// Cursor: 1,
-			// SrcWidth:  uint32(800),
-			// SrcHeight: uint32(500),
-			//TODO: fix it
+			DstCols:     uint32(cell.img_width),
+			DstRows:     uint32(cell.img_height),
 			ImageId:     cell.id,
 			PlacementId: cell.id,
 		})
@@ -140,15 +123,8 @@ func (g *grid) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		for _, cell := range msg.cells {
 
 			img_opts := KittyImgOpts{
-				DstCols: uint32(cell.img_width),
-				DstRows: uint32(cell.img_height),
-				// 100 pixels =1 row
-				// SrcX:      109,
-				// SrcY:      109,
-				// Cursor: 1,
-				// SrcWidth:  uint32(800),
-				// SrcHeight: uint32(500),
-				//TODO: fix it
+				DstCols:     uint32(cell.img_width),
+				DstRows:     uint32(cell.img_height),
 				ImageId:     cell.id,
 				PlacementId: cell.id,
 			}
@@ -156,14 +132,7 @@ func (g *grid) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			fmt.Fprintf(os.Stdout, "\x1b[%d;%dH", cell.row_cell+1, cell.col_cell+1)
 			cell.RenderImage(os.Stdout, img_opts)
 
-			//show-render strategy doesnt work very well because kittys storage quotas,
-			//  if the quota is reached then the show func wont show images because they hae been cleared
-			// if cell.initialized {
-			// 	cell.Show(os.Stdout, img_opts)
-			// } else {
-
 			cell.initialized = true
-			// }
 
 		}
 
@@ -193,6 +162,7 @@ func (g *grid) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case key.Matches(msg, g.keys.select_cell):
 			g.backend.SetImage(g.cells[g.page_index][g.cell_index].filename)
+			data.WriteToDataFile(&data.Data{Current_wallpaper: g.cells[g.page_index][g.cell_index].filename}, g.config.Data_dir)
 			return g, nil
 		}
 	}
@@ -209,7 +179,6 @@ func (g *grid) View() string {
 
 	file := filepath.Base(cell.filename)
 
-	s := fmt.Sprintf("%s %d %t", file, cell.id, cell.initialized)
 	square := lipgloss.NewStyle().
 		Width(int(cell.img_width)).
 		Height(int(cell.img_height)).
@@ -217,7 +186,7 @@ func (g *grid) View() string {
 		MarginTop(int(cell.row_cell)). // y position
 		MarginLeft(int(cell.col_cell-1)).
 		Border(lipgloss.RoundedBorder(), true).
-		Render(s)
+		Render(file)
 
 	background := lipgloss.NewStyle().
 		Width(int(g.window_width)).

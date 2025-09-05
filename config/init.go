@@ -81,17 +81,17 @@ func GetDefaultConfigPath() string {
 	)
 
 	if val, ok := os.LookupEnv(xdgConfigHome); ok {
-		return filepath.Join(val, "hyprgo", "config.json")
+		return filepath.Join(val, "paper-tui", "config.json")
 	}
 
-	// fallback to $HOME/.config/hyprgo/config.json
+	// fallback to $HOME/.config/paper-tui/config.json
 	home, err := os.UserHomeDir()
 	if err != nil {
 		// if home can't be resolved, fallback to current working directory
 		return filepath.Join(".", "config.json")
 	}
 
-	return filepath.Join(home, ".config", "hyprgo", "config.json")
+	return filepath.Join(home, ".config", "paper-tui", "config.json")
 }
 
 func GetDefaultConfigVals() *Config {

@@ -16,13 +16,7 @@ import (
 
 func main() {
 	config_file := flag.String("config", config.GetDefaultConfigPath(), "config file")
-	init := false
-	// if len(os.Args) > 2 {
-	// 	log.Fatal("Too many arguments")
-	// }
-	if len(os.Args) == 2 {
-		init = os.Args[1] == "init"
-	}
+	init := flag.Bool("init", false, "Init flag")
 
 	flag.Parse()
 
@@ -39,8 +33,8 @@ func main() {
 	back := backend.InitBackend()
 
 	//check init here
-	if init {
-		log.Print(init)
+	if *init {
+		log.Print(data.Current_wallpaper)
 		//and check if data is already initialized
 		back.SetImage(data.Current_wallpaper)
 		return
@@ -58,7 +52,7 @@ func main() {
 	}
 
 	p := tea.NewProgram(
-		tui.NewGrid(files, data.Current_wallpaper, width, height, back), tea.WithAltScreen())
+		tui.NewGrid(files, config_struct, data, width, height, back), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)

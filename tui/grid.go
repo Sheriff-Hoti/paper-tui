@@ -95,17 +95,6 @@ func NewGrid(abs_files []string, config *config.Config, data *data.Data, init_te
 
 func (g *grid) Init() tea.Cmd {
 	// Just return `nil`, which means "no I/O right now, please."
-	first_page := g.cells[0]
-	for _, cell := range first_page {
-		fmt.Fprintf(os.Stdout, "\x1b[%d;%dH", cell.row_cell+1, cell.col_cell+1)
-		cell.RenderImage(os.Stdout, KittyImgOpts{
-			DstCols:     uint32(cell.img_width),
-			DstRows:     uint32(cell.img_height),
-			ImageId:     cell.id,
-			PlacementId: cell.id,
-		})
-		cell.initialized = true
-	}
 	return nil
 }
 
@@ -113,6 +102,38 @@ func (g *grid) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// var cmd []tea.Cmd
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		g.window_height = uint32(msg.Height)
+		g.window_width = uint32(msg.Width)
+		first_page := g.cells[g.page_index]
+		for _, cell := range first_page {
+
+			cell.row_cell =
+				(cell.row_idx * cell.img_height) + TOP_SPACING + (ROWS_SPACING * cell.row_idx)
+			cell.col_cell =
+				(cell.col_idx * cell.img_width) + LEFT_SPACING + (COLS_SPACING * cell.col_idx)
+
+			cell.img_width = uint32((g.window_width / COLS) - 2)
+			cell.img_height = uint32((g.window_height / ROWS) - 2)
+
+			fmt.Fprintf(os.Stdout, "\x1b[%d;%dH", cell.row_cell+1, cell.col_cell+1)
+
+			img_opts := KittyImgOpts{
+				DstCols:     uint32(cell.img_width),
+				DstRows:     uint32(cell.img_height),
+				ImageId:     cell.id,
+				PlacementId: cell.id,
+			}
+
+			if cell.initialized {
+				cell.Show(os.Stdout, img_opts)
+			} else {
+				cell.RenderImage(os.Stdout, img_opts)
+				cell.initialized = true
+			}
+
+		}
+
 	case page_change_msg:
 		for _, cell := range msg.old_cells {
 			cell.Hide(os.Stdout, KittyImgOpts{

@@ -6,3 +6,9 @@ dev:
 
 tidy:
 	go mod tidy
+
+dev-ghostty:
+	ghostty --title=\"paper-tui\" -e make dev
+
+test-all:
+	go test ./... -v -cover

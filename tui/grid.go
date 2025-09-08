@@ -8,6 +8,7 @@ import (
 	"github.com/Sheriff-Hoti/paper-tui/backend"
 	"github.com/Sheriff-Hoti/paper-tui/config"
 	"github.com/Sheriff-Hoti/paper-tui/data"
+	"github.com/Sheriff-Hoti/paper-tui/util"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/paginator"
 	tea "github.com/charmbracelet/bubbletea"
@@ -105,22 +106,31 @@ func (g *grid) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		g.window_height = uint32(msg.Height)
 		g.window_width = uint32(msg.Width)
-		first_page := g.cells[g.page_index]
+		first_page, ok := util.Get(g.cells, 0)
+
+		if !ok {
+			return g, nil
+		}
+
 		for _, cell := range first_page {
 
-			cell.row_cell =
-				(cell.row_idx * cell.img_height) + TOP_SPACING + (ROWS_SPACING * cell.row_idx)
-			cell.col_cell =
-				(cell.col_idx * cell.img_width) + LEFT_SPACING + (COLS_SPACING * cell.col_idx)
+			img_width := uint32((msg.Width / COLS) - 2)
+			img_height := uint32((msg.Height / COLS) - 2)
 
-			cell.img_width = uint32((g.window_width / COLS) - 2)
-			cell.img_height = uint32((g.window_height / ROWS) - 2)
+			cell.img_width = img_width
+			cell.img_height = img_height
 
-			fmt.Fprintf(os.Stdout, "\x1b[%d;%dH", cell.row_cell+1, cell.col_cell+1)
+			row_cell := (cell.row_idx * img_height) + TOP_SPACING + (ROWS_SPACING * cell.row_idx)
+			col_cell := (cell.col_idx * img_width) + LEFT_SPACING + (COLS_SPACING * cell.col_idx)
+
+			cell.row_cell = uint32(row_cell)
+			cell.col_cell = uint32(col_cell)
+
+			fmt.Fprintf(os.Stdout, "\x1b[%d;%dH", row_cell+1, col_cell+1)
 
 			img_opts := KittyImgOpts{
-				DstCols:     uint32(cell.img_width),
-				DstRows:     uint32(cell.img_height),
+				DstCols:     uint32(img_width),
+				DstRows:     uint32(img_height),
 				ImageId:     cell.id,
 				PlacementId: cell.id,
 			}

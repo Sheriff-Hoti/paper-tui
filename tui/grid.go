@@ -20,9 +20,9 @@ const (
 	ROWS         = 3
 	PAGE_SIZE    = COLS * ROWS
 	ROWS_SPACING = 1
-	COLS_SPACING = 2
+	COLS_SPACING = 1
 	TOP_SPACING  = 1
-	LEFT_SPACING = 1
+	LEFT_SPACING = 2
 )
 
 type grid struct {
@@ -106,31 +106,21 @@ func (g *grid) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		g.window_height = uint32(msg.Height)
 		g.window_width = uint32(msg.Width)
-		first_page, ok := util.Get(g.cells, 0)
+		page, ok := util.Get(g.cells, g.page_index)
 
 		if !ok {
 			return g, nil
 		}
 
-		for _, cell := range first_page {
+		for _, cell := range page {
 
-			img_width := uint32((msg.Width / COLS) - 2)
-			img_height := uint32((msg.Height / COLS) - 2)
+			cell.Update(msg.Width, msg.Height)
 
-			cell.img_width = img_width
-			cell.img_height = img_height
-
-			row_cell := (cell.row_idx * img_height) + TOP_SPACING + (ROWS_SPACING * cell.row_idx)
-			col_cell := (cell.col_idx * img_width) + LEFT_SPACING + (COLS_SPACING * cell.col_idx)
-
-			cell.row_cell = uint32(row_cell)
-			cell.col_cell = uint32(col_cell)
-
-			fmt.Fprintf(os.Stdout, "\x1b[%d;%dH", row_cell+1, col_cell+1)
+			fmt.Fprintf(os.Stdout, "\x1b[%d;%dH", cell.row_cell+1, cell.col_cell+1)
 
 			img_opts := KittyImgOpts{
-				DstCols:     uint32(img_width),
-				DstRows:     uint32(img_height),
+				DstCols:     uint32(cell.img_width),
+				DstRows:     uint32(cell.img_height),
 				ImageId:     cell.id,
 				PlacementId: cell.id,
 			}
@@ -152,6 +142,7 @@ func (g *grid) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			})
 		}
 		for _, cell := range msg.cells {
+			cell.Update(int(g.window_width), int(g.window_height))
 
 			img_opts := KittyImgOpts{
 				DstCols:     uint32(cell.img_width),
@@ -205,8 +196,14 @@ func (g *grid) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (g *grid) View() string {
 	// The header
-	page := g.cells[g.page_index]
-	cell := page[g.cell_index]
+	page, ok := util.Get(g.cells, g.page_index)
+	if !ok {
+		return "No pages"
+	}
+	cell, ok := util.Get(page, g.cell_index)
+	if !ok {
+		return "No cells"
+	}
 
 	file := filepath.Base(cell.filename)
 
@@ -222,7 +219,7 @@ func (g *grid) View() string {
 	background := lipgloss.NewStyle().
 		Width(int(g.window_width)).
 		Height(int(g.window_height)).
-		Background(lipgloss.Color("235")).Render(square)
+		Render(square)
 
 	g.paginator.Page = g.page_index
 	return lipgloss.JoinVertical(lipgloss.Center, background, g.paginator.View())
@@ -238,11 +235,12 @@ func (g *grid) go_up() {
 		return
 	}
 
-	page := g.cells[g.page_index]
-	//guardrails
-	if len(page) == 0 {
+	page, ok := util.Get(g.cells, g.page_index)
+
+	if !ok {
 		return
 	}
+
 	//guardrails
 	if g.cell_index < 0 && g.cell_index >= len(page) {
 		return
@@ -261,12 +259,13 @@ func (g *grid) go_down() {
 	if len(g.cells) == 0 {
 		return
 	}
-	//guardrails
-	if g.page_index < 0 && g.page_index >= len(g.cells) {
+
+	page, ok := util.Get(g.cells, g.page_index)
+
+	if !ok {
 		return
 	}
 
-	page := g.cells[g.page_index]
 	//guardrails
 	if len(page) == 0 {
 		return

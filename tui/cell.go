@@ -72,6 +72,7 @@ type cell struct {
 	col_cell    uint32
 	id          uint32
 	initialized bool
+	last_dims   int
 }
 
 func (c *cell) RenderImage(out io.Writer, opts KittyImgOpts) error {
@@ -124,4 +125,24 @@ func (c *cell) Show(out io.Writer, opts KittyImgOpts) error {
 	}
 
 	return nil
+}
+
+func (c *cell) Update(term_width int, term_height int) bool {
+
+	dims := (term_width << 16) | (term_height & 0xFFFF)
+
+	changed := dims != c.last_dims
+
+	if !changed {
+		return changed
+	}
+
+	c.img_width = uint32((term_width / COLS) - 2)
+	c.img_height = uint32((term_height / ROWS) - 2)
+	c.row_cell = (c.row_idx * c.img_height) + TOP_SPACING + (ROWS_SPACING * c.row_idx)
+	c.col_cell = (c.col_idx * c.img_width) + LEFT_SPACING + (COLS_SPACING * c.col_idx)
+
+	c.last_dims = dims
+
+	return true
 }

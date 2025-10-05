@@ -4,13 +4,11 @@ paper-tui is a terminal UI wallpaper browser and setter built around the Kitty i
 
 ## Inspiration
 
-This project takes heavy inspiration from wallrizz and aims to deliver a similar fluid browsing experience tailored to my workflow and tooling.
+This project takes heavy inspiration from [wallrizz](https://github.com/5hubham5ingh/WallRizz)
 
 ## Showcase
 
-![Paper TUI showcasing wallpaper grid](docs/showcase.png)
-
-Add the provided showcase image to `docs/showcase.png` so it renders inline above.
+![Paper TUI showcasing wallpaper grid](./example.png)
 
 ## Installation
 

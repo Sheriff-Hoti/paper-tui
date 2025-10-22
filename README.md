@@ -34,3 +34,4 @@ This project takes heavy inspiration from [wallrizz](https://github.com/5hubham5
 
 - [ ] Investigate and fix the Kitty image protocol quirk where the first wallpaper is auto-applied on launch in non-Ghostty Kitty terminals.
 - [ ] Provide an image-preview fallback for terminals that do not support the Kitty image protocol.
+- [ ] Come up with a strategy to be able to display other image formats (atm only png format works, for other formats such as jpeg/jpg extra steps are required).

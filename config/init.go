@@ -11,9 +11,10 @@ import (
 )
 
 type Config struct {
-	Backend       string `json:"backend"`
-	Wallpaper_dir string `json:"wallpaper_dir"`
-	Data_dir      string `json:"data_dir"`
+	Init_hook             string `json:"init_hook"`
+	Wallpaper_select_hook string `json:"wallpaper_select_hook"`
+	Wallpaper_dir         string `json:"wallpaper_dir"`
+	Data_dir              string `json:"data_dir"`
 }
 
 func GetWallpapers(dir string) ([]string, error) {
@@ -97,8 +98,9 @@ func GetDefaultConfigPath() string {
 func GetDefaultConfigVals() *Config {
 
 	return &Config{
-		Backend:       "swaybg",
-		Wallpaper_dir: "",
-		Data_dir:      data.GetDefaultDataPath(),
+		Init_hook:             "",
+		Wallpaper_select_hook: "",
+		Wallpaper_dir:         "",
+		Data_dir:              data.GetDefaultDataPath(),
 	}
 }

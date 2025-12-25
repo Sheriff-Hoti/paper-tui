@@ -6,10 +6,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/Sheriff-Hoti/paper-tui/backend"
 	"github.com/Sheriff-Hoti/paper-tui/config"
 	"github.com/Sheriff-Hoti/paper-tui/data"
 	"github.com/Sheriff-Hoti/paper-tui/tui"
+	"github.com/Sheriff-Hoti/paper-tui/util"
 	tea "github.com/charmbracelet/bubbletea"
 	"golang.org/x/term"
 )
@@ -30,13 +30,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	back := backend.InitBackend()
-
-	//check init here
 	if *init {
-		log.Print(data.Current_wallpaper)
-		//and check if data is already initialized
-		back.SetImage(data.Current_wallpaper)
+		if err := util.RunHook(config_struct.Init_hook, data.Current_wallpaper); err != nil {
+			fmt.Errorf("init hook error: %v", err)
+			os.Exit(1)
+
+		}
 		return
 	}
 
@@ -52,7 +51,7 @@ func main() {
 	}
 
 	p := tea.NewProgram(
-		tui.NewGrid(files, config_struct, data, width, height, back), tea.WithAltScreen())
+		tui.NewGrid(files, config_struct, data, width, height), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)

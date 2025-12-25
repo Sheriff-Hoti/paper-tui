@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Sheriff-Hoti/paper-tui/backend"
 	"github.com/Sheriff-Hoti/paper-tui/config"
 	"github.com/Sheriff-Hoti/paper-tui/data"
 	"github.com/Sheriff-Hoti/paper-tui/util"
@@ -33,14 +32,12 @@ type grid struct {
 	window_width  uint32
 	window_height uint32
 	paginator     paginator.Model
-	backend       backend.WallpaperBackend
 	config        *config.Config
 	data          *data.Data
 }
 
-func NewGrid(abs_files []string, config *config.Config, data *data.Data, init_term_width int, init_term_height int, back backend.WallpaperBackend) *grid {
+func NewGrid(abs_files []string, config *config.Config, data *data.Data, init_term_width int, init_term_height int) *grid {
 
-	backen := backend.InitBackend()
 	cells := make([][]*cell, 0, (len(abs_files)+PAGE_SIZE-1)/PAGE_SIZE)
 
 	p := paginator.New()
@@ -88,7 +85,6 @@ func NewGrid(abs_files []string, config *config.Config, data *data.Data, init_te
 		window_width:  uint32(init_term_width),
 		window_height: uint32(init_term_height),
 		paginator:     p,
-		backend:       backen,
 		data:          data,
 		config:        config,
 	}
@@ -183,8 +179,12 @@ func (g *grid) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return g, nil
 
 		case key.Matches(msg, g.keys.select_cell):
-			g.backend.SetImage(g.cells[g.page_index][g.cell_index].filename)
-			data.WriteToDataFile(&data.Data{Current_wallpaper: g.cells[g.page_index][g.cell_index].filename}, g.config.Data_dir)
+			// g.backend.SetImage(g.cells[g.page_index][g.cell_index].filename)
+			selected := g.cells[g.page_index][g.cell_index].filename
+			data.WriteToDataFile(&data.Data{Current_wallpaper: selected}, g.config.Data_dir)
+			if err := util.RunHook(g.config.Wallpaper_select_hook, selected); err != nil {
+				fmt.Fprintf(os.Stderr, "wallpaper hook error: %v\n", err)
+			}
 			return g, nil
 		}
 	}

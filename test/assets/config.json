@@ -1,6 +1,6 @@
 {
     "wallpaper_dir": "$HOME/nixos-config/assets/wallpapers",
     "data_dir": "$HOME/paper-tui/test/assets/data.json",
-    "wallpaper_select_hook": "pkill swaybg; swaybg -m fill -i {} & wallust run {}",
-    "init_hook": "swaybg -m fill -i {}"
+    "wallpaper_select_hook": "pkill swaybg; setsid swaybg -m fill -i {} >/dev/null 2>&1 & setsid wallust run {} >/dev/null 2>&1 &",
+    "init_hook": "setsid swaybg -m fill -i {} >/dev/null 2>&1 &"
 }

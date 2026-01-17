@@ -119,6 +119,7 @@ func (g *grid) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				DstRows:     uint32(cell.img_height),
 				ImageId:     cell.id,
 				PlacementId: cell.id,
+				ZIndex:      -1,
 			}
 
 			if cell.initialized {
@@ -135,6 +136,7 @@ func (g *grid) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cell.Hide(os.Stdout, KittyImgOpts{
 				ImageId:     cell.id,
 				PlacementId: cell.id,
+				ZIndex:      -1,
 			})
 		}
 		for _, cell := range msg.cells {
@@ -145,6 +147,7 @@ func (g *grid) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				DstRows:     uint32(cell.img_height),
 				ImageId:     cell.id,
 				PlacementId: cell.id,
+				ZIndex:      -1,
 			}
 
 			fmt.Fprintf(os.Stdout, "\x1b[%d;%dH", cell.row_cell+1, cell.col_cell+1)

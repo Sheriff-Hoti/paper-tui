@@ -17,7 +17,17 @@ type Config struct {
 	Data_dir              string `json:"data_dir"`
 }
 
+// const allowedImageExtensions = ".jpg,.jpeg,.png,.gif"
+
 func GetWallpapers(dir string) ([]string, error) {
+
+	allowedImageExtensions := map[string]struct{}{
+		".jpg":  {},
+		".png":  {},
+		".jpeg": {},
+		".gif":  {},
+	}
+
 	// Expand environment variables like $HOME
 	dirEnvExpanded := os.ExpandEnv(dir)
 
@@ -37,7 +47,8 @@ func GetWallpapers(dir string) ([]string, error) {
 	for _, entry := range entries {
 		if !entry.IsDir() {
 			ext := strings.ToLower(filepath.Ext(entry.Name()))
-			if ext == ".jpg" || ext == ".jpeg" || ext == ".png" {
+
+			if _, ok := allowedImageExtensions[ext]; ok {
 				fullPath := filepath.Join(absDir, entry.Name())
 				absPath, err := filepath.Abs(fullPath)
 				if err != nil {
@@ -46,13 +57,14 @@ func GetWallpapers(dir string) ([]string, error) {
 				fileNames = append(fileNames, absPath)
 			}
 		}
+
 	}
 
 	return fileNames, nil
 }
 
 func ReadConfigFile(config_path string) (*Config, error) {
-
+	//TODO check in main.go if config file is passed via flag if yes and the file does not exist return error, if its not passed via flag return default config
 	config := GetDefaultConfigVals()
 
 	if _, err := os.Stat(config_path); errors.Is(err, os.ErrNotExist) {

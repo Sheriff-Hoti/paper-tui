@@ -5,21 +5,33 @@ import (
 	"path/filepath"
 )
 
-func GetCacheDir() string {
+func GetCacheDir() (string, error) {
 	const (
 		xdgCacheHome = "XDG_CACHE_HOME"
 	)
 
 	if val, ok := os.LookupEnv(xdgCacheHome); ok {
-		return filepath.Join(val, "paper-tui")
+		dir := filepath.Join(val, "paper-tui")
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return "", err
+		}
+		return dir, nil
 	}
 
 	// fallback to $HOME/.cache/paper-tui
 	home, err := os.UserHomeDir()
 	if err != nil {
 		// if home can't be resolved, fallback to current working directory
-		return filepath.Join(".", "cache")
+		dir := filepath.Join(".", "cache")
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return "", err
+		}
+		return dir, nil
 	}
 
-	return filepath.Join(home, ".cache", "paper-tui")
+	dir := filepath.Join(home, ".cache", "paper-tui")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return "", err
+	}
+	return dir, nil
 }

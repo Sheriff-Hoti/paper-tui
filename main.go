@@ -39,7 +39,7 @@ func main() {
 		return
 	}
 
-	files, err := config.GetWallpapers(config_struct.Wallpaper_dir)
+	files, err := util.GetWallpapers(config_struct.Wallpaper_dir)
 	if err != nil {
 		log.Fatal("Error trying to get wallpapers:", err)
 	}

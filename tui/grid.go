@@ -21,7 +21,7 @@ const (
 	ROWS_SPACING = 1
 	COLS_SPACING = 1
 	TOP_SPACING  = 1
-	LEFT_SPACING = 2
+	LEFT_SPACING = 1
 )
 
 type grid struct {
@@ -56,8 +56,8 @@ func NewGrid(abs_files []string, config *config.Config, data *data.Data, init_te
 
 			row_idx := uint32(idx / COLS)
 			col_idx := uint32(idx % COLS)
-			img_width := uint32((init_term_width / COLS) - 2)
-			img_height := uint32((init_term_height / ROWS) - 2)
+			img_width := uint32((init_term_width / COLS))
+			img_height := uint32((init_term_height / ROWS))
 
 			cell_page = append(cell_page, &cell{
 				filename:   file,

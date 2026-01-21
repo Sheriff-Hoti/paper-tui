@@ -5,7 +5,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/Sheriff-Hoti/paper-tui/data"
 )
@@ -18,50 +17,6 @@ type Config struct {
 }
 
 // const allowedImageExtensions = ".jpg,.jpeg,.png,.gif"
-
-func GetWallpapers(dir string) ([]string, error) {
-
-	allowedImageExtensions := map[string]struct{}{
-		".jpg":  {},
-		".png":  {},
-		".jpeg": {},
-		".gif":  {},
-	}
-
-	// Expand environment variables like $HOME
-	dirEnvExpanded := os.ExpandEnv(dir)
-
-	// Get absolute path of directory
-	absDir, err := filepath.Abs(dirEnvExpanded)
-	if err != nil {
-		return nil, err
-	}
-
-	entries, err := os.ReadDir(absDir)
-	if err != nil {
-		return nil, err
-	}
-
-	fileNames := make([]string, 0, len(entries))
-
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			ext := strings.ToLower(filepath.Ext(entry.Name()))
-
-			if _, ok := allowedImageExtensions[ext]; ok {
-				fullPath := filepath.Join(absDir, entry.Name())
-				absPath, err := filepath.Abs(fullPath)
-				if err != nil {
-					return nil, err
-				}
-				fileNames = append(fileNames, absPath)
-			}
-		}
-
-	}
-
-	return fileNames, nil
-}
 
 func ReadConfigFile(config_path string) (*Config, error) {
 	//TODO check in main.go if config file is passed via flag if yes and the file does not exist return error, if its not passed via flag return default config

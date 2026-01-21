@@ -21,7 +21,7 @@ const (
 	ROWS_SPACING = 1
 	COLS_SPACING = 1
 	TOP_SPACING  = 1
-	LEFT_SPACING = 1
+	LEFT_SPACING = 2
 )
 
 type grid struct {
@@ -213,19 +213,36 @@ func (g *grid) View() string {
 	square := lipgloss.NewStyle().
 		Width(int(cell.img_width)).
 		Height(int(cell.img_height)).
-		// Background(lipgloss.Color("12")).        // blue square
-		MarginTop(int(cell.row_cell)). // y position
-		MarginLeft(int(cell.col_cell-1)).
+		Background(lipgloss.Color("12")). // blue square
+		MarginTop(int(cell.row_cell)-1).  // y position
+		MarginLeft(int(cell.col_cell-2)).
 		Border(lipgloss.RoundedBorder(), true).
 		Render(file)
 
 	background := lipgloss.NewStyle().
-		Width(int(g.window_width)).
-		Height(int(g.window_height)).
+		Width(int(g.window_width)-2).
+		Height(int(g.window_height)-2).
+		Border(lipgloss.NormalBorder(), false, true, false, true).
 		Render(square)
 
+	bgLayer := util.NewLayer(background)
+	notificationLayer := util.NewLayer(
+		lipgloss.NewStyle().
+			Width(10).
+			Height(3).
+			Background(lipgloss.Color("12")).
+			Foreground(lipgloss.Color("12")).
+			Border(lipgloss.RoundedBorder(), true, true, true, true).
+			Render("nice"))
+
+	canvas := util.NewCanvas(
+		bgLayer.X(0).Y(0).Z(0),
+		notificationLayer.X(3).Y(3).Z(2),
+	)
+
 	g.paginator.Page = g.page_index
-	return lipgloss.JoinVertical(lipgloss.Center, background, g.paginator.View())
+	// return canvas.Render()
+	return lipgloss.JoinVertical(lipgloss.Center, canvas.Render(), g.paginator.View())
 }
 
 func (g *grid) go_up() {
